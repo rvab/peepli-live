@@ -28,6 +28,17 @@ def handle_mention(event, say):
     logger.debug(f"Received message: {event}")
     say(f"You mentioned me, <@{event['user']}>!")
 
+@app.event("message")
+def handle_dm(body, say):
+    event = body["event"]
+    if event["channel_type"] == "im":
+        user = event["user"]
+        text = event["text"]
+
+        # Process the DM and respond
+        response = f"Hello <@{user}>! You sent me a DM: {text}"
+        say(response)
+
 
 def main():
     handler = SocketModeHandler(app, os.getenv("SLACK_APP_TOKEN"))
