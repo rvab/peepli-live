@@ -60,7 +60,6 @@ def get_user_id_from_collect_wish_text(text):
 @app.event("app_mention")
 def handle_mention(event, say):
     logger.debug(f"Received message: {event}")
-    print(f'TEsting johnnn - body: {event}')
     response = getBedrockResponse(input_text=event["text"])
     # say(response)
     send_slack_message(event["channel"], response, event["ts"])
@@ -79,7 +78,6 @@ def handle_message(body, message, say):
             channel_id = message["channel"]
 
             parent_message = get_parent_message(channel_id, thread_ts)
-            say(f"This is a reply in a thread. Thread timestamp: {thread_ts}")
 
             if parent_message:
                 print(f"Parent message text: {parent_message['text']}")
@@ -88,7 +86,9 @@ def handle_message(body, message, say):
                 print(f"For user: {for_user}")
 
                 print(f"From user: {from_user}, For user: {for_user}")
-                say(f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}")
+                response = f"Recieved the following wish from you: {text}"
+                # response = f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}"
+                send_slack_message(event["channel"], response, event["ts"])
             else:
                 print("Couldn't retrieve parent message")
 
@@ -99,9 +99,6 @@ def handle_message(body, message, say):
 
         for user_id in from_users:
             send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{to}>, work anniversary")
-
-        # response = getBedrockResponse(input_text=text)
-        # say(response)
 
 def main():
     handler = SocketModeHandler(app, slack_app_token)
