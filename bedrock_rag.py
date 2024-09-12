@@ -46,7 +46,7 @@ def retrieveAndGenerate(input_text, sourceType, model_id, document_s3_uri=None, 
             }
         )
 
-def getBedrockResponse(input_text):
+def get_kb_response(input_text):
     response = retrieveAndGenerate(
         input_text=input_text,
         sourceType=source_type,

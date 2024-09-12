@@ -59,21 +59,15 @@ def add_message(conn, from_user, for_user, content):
   conn.commit()
   return cursor.lastrowid
 
-def get_user_messages(conn, user_email):
+def get_user_messages(conn, id):
   cursor = conn.cursor()
   cursor.execute('''
   SELECT m.id, u_from.name as from_user, u_for.name as for_user, m.content, m.created_at
   FROM messages m
-  JOIN users u_from ON m.from_user = u_from.id
-  JOIN users u_for ON m.for_user = u_for.id
-  WHERE u_from.email = ? OR u_for.email = ?
+  JOIN users u_from ON m.from_user_id = u_from.id
+  JOIN users u_for ON m.for_user_id = u_for.id
+  WHERE u_for.id = ?
   ORDER BY m.created_at DESC
-  ''', (user_email, user_email))
+  ''', (id,))
   return cursor.fetchall()
 
-# # Get messages for a user
-# messages = get_user_messages(conn, "alice@example.com")
-# for message in messages:
-#   print(f"From: {message[1]}, To: {message[2]}, Content: {message[3]}, Time: {message[4]}")
-
-# conn.close()

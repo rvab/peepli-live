@@ -4,10 +4,10 @@ import json
 
 bedrock_prompt_client = boto3.client(service_name='bedrock-runtime', region_name=region)
 
-def invoke_bedrock_model(prompt):
+def classify_user_message(prompt):
 
     system_prompt = """
-        You are an AI assistant tasked with analyzing messages related to anniversary wishes, listing employee wishes, or handling general queries. Your job is to identify the type of message and return structured information based on the context and when user is saying bye, thanks and similar words then just respond with thanks and don't add any more info. Fix any typos and proceed. 
+        You are an AI assistant tasked with analyzing messages related to anniversary wishes, listing employee wishes, or handling general queries. Your job is to identify the type of message and return structured information based on the context and when user is saying bye, thanks and similar words then just respond with thanks and don't add any more info. Fix any typos and proceed. Strictly stick to the output in the mentioned format.
         Message Types:
         1. Collecting Anniversary Wishes:
         Example Format: "collect anniversary wishes to @User1 from @User2, @User3, ..."
@@ -42,7 +42,6 @@ def invoke_bedrock_model(prompt):
 
         4. Identify the wish:
         Determine if the user's message contains a specific type of wish, such as an anniversary wish, birthday wish, farewell wish, or any other kind of positive sentiment. A wish typically includes expressions of goodwill or positive intention, like 'Happy Birthday!' or 'Congratulations on your anniversary!' If the message contains a specific type of wish, acknowledge it appropriately. If the message does not contain a wish, request clarification or additional information from the user. Ensure responses are friendly and contextually appropriate.
-        Your task: if it is a wish then reply with Yes else No. If you can't determine if it's a wish then reply No
         Example Input: Happy birhday
         Expected Output: { "action": "wish" }
         Example Input: hehe you mad
@@ -74,6 +73,6 @@ def invoke_bedrock_model(prompt):
     )
 
     response_body = response.get('body').read()
-    print('invoke_bedrock_model response' ,response_body)
+    print('classify_user_message response', response_body)
     response_body = json.loads(response_body)
     return response_body
