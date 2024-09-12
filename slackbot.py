@@ -1,8 +1,10 @@
-import os
 import logging
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from dotenv import load_dotenv
+
+from bedrock import getBedrockResponse
+from constants import slack_bot_token, slack_app_token
 
 load_dotenv()
 
@@ -10,7 +12,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-app = App(token=os.getenv("SLACK_BOT_TOKEN"))
+app = App(token=slack_bot_token)
+
 
 @app.middleware  # Register a middleware to log all incoming events
 def log_request(logger, body, next):
@@ -35,13 +38,11 @@ def handle_dm(body, say):
         user = event["user"]
         text = event["text"]
 
-        # Process the DM and respond
-        response = f"Hello <@{user}>! You sent me a DM: {text}"
+        response = getBedrockResponse(input_text=text)
         say(response)
 
-
 def main():
-    handler = SocketModeHandler(app, os.getenv("SLACK_APP_TOKEN"))
+    handler = SocketModeHandler(app, slack_app_token)
     logger.info("Starting the bot...")
     handler.start()
 
