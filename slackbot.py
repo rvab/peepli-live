@@ -28,12 +28,6 @@ def custom_error_handler(error, body, logger):
     logger.exception(f"Error: {error}")
     logger.info(f"Request body: {body}")
 
-# Event listener for mentions
-@app.event("app_mention")
-def handle_mention(event, say):
-    logger.debug(f"Received message: {event}")
-    say(f"You mentioned me, <@{event['user']}>!")
-
 
 def get_group_members(group_id):
     url = "https://slack.com/api/usergroups.users.list"
@@ -51,7 +45,6 @@ def get_group_members(group_id):
         return data.get("users")
     else:
         raise Exception(f"Failed to get members: {data.get('error')}")
-
 
 def get_parent_message(channel_id, thread_ts):
     try:
