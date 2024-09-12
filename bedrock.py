@@ -17,14 +17,14 @@ def retrieveAndGenerate(input_text, sourceType, model_id, document_s3_uri=None, 
                         {
                             "sourceType": sourceType,
                             "s3Location": {
-                                "uri": document_s3_uri  
+                                "uri": document_s3_uri
                             }
                         }
                     ]
                 }
             }
         )
-        
+
     else:
         return bedrock_client.retrieve_and_generate(
             input={'text': input_text},
@@ -38,7 +38,7 @@ def retrieveAndGenerate(input_text, sourceType, model_id, document_s3_uri=None, 
                             "byteContent": {
                                 "identifier": "testFile.txt",
                                 "contentType": "text/plain",
-                                "data": data  
+                                "data": data
                             }
                         }
                     ]
