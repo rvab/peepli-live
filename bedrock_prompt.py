@@ -16,8 +16,10 @@ def invoke_bedrock_model(prompt):
         Extract the usernames of those giving wishes (the names after "from @").
         Return this information in a structured format.
         Example Input:
-        "collect anniversary wishes to @Arun from @AB, @Kavya"
-        Expected Output: {"action": "collecting wishes","to": ["Arun"], "from": ["AB","Kavya"]}
+        "collect anniversary wishes to @Arun from @team_notifications, @team_infinite_minds"
+        Expected Output: {"action": "collecting wishes","to": ["UPDRL8UDV"], "from": ['S07LW5KUGCT', 'SNL3JTZ8E']}
+         "collect anniversary wishes to @Arun from @AB, @team_infinite_minds"
+        Expected Output: {"action": "collecting wishes","to": ["UPDRL8UDV"], "from": ['UPDRL8UDV', 'SNL3JTZ8E']}
         2. Listing Wishes for an Employee:
         Example Formats:"List down all the wishes for [EmployeeName]"
         "Who wished [EmployeeName] for the anniversary?"

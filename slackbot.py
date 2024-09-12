@@ -118,30 +118,25 @@ def handle_message(body, message, say):
             else:
                 print("Couldn't retrieve parent message")
 
-        user_ids = get_user_ids_from_mentions(text)
-
-        print(f"Extracted user IDs: {user_ids}")
-
-
-        for user_id in user_ids:
-            send_slack_message(user_id, f"Hello <@{user_id}>! You were mentioned in a message.")
-
         response = invoke_bedrock_model(prompt=text)
         json_response = json.loads(response['content'][0]['text'])
         to_users = json_response['to']
         from_users = json_response['from']
 
-        for to_user_id in to_users:
-            if to_user_id.startswith('subteam'):
-                extracted_id = to_user_id.split('^')[1]
-                users = get_group_members(extracted_id)
+        users = []
+        for from_user in from_users:
+            if from_user.startswith('S'):
+                users.extend(get_group_members(from_user))
             else:
-                users = [to_user_id]
+                users.append(from_user)
 
-            for user_id in from_users:
-                for target_user in users:
-                    if target_user != user_id:
-                        send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{target_user}>, work anniversary")
+        users = list(set(users))
+        to_users = list(set(to_users))
+
+        for user_id in users:
+            for target_user in to_users:
+                if target_user != user_id:
+                    send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{target_user}>, work anniversary")
         # response = getBedrockResponse(input_text=text)
         # say(response)
 
