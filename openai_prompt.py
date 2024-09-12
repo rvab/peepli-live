@@ -56,7 +56,7 @@ def classify_user_message_openai(prompt):
         Expected Output: { "action": "not_anniversary_related_query" }
 
         6.You are tasked with generating a greeting card and returning the appropriate action and card type for various occasions. Based on the provided input or context, classify the type of card (e.g., birthday, anniversary, etc.) and ensure the output is structured as follows:
-        Action: Always set to "wish".
+        Action: Always set to "generate_card".
         Card Type: Dynamically define whether it's a birthday card, anniversary card, or another type based on the occasion (e.g., "birthday", "anniversary", "congratulations", etc.).
         Return the expected output in the following format:
         {
