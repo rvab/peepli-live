@@ -29,10 +29,10 @@ def classify_user_message_openai(prompt):
         If no wishes have been collected, return an empty array for the wishes field.
         Example Input:
         "List down all the wishes for Kavya"
-        Expected Output:|{"action": "listing_wishes", "to": "Kavya","wishes": [{"AB": "congratulations"},{"Chethan": "Hi"}]}
+        Expected Output:|{"action": "listing_wishes", "to": "UPDRL8UDV","wishes": [{"UPDRL8UDV": "congratulations"},{"UPDRL8UDV": "Hi"}]}
         Example Input:
         "Who wished Kavya for anniversary?"
-        Expected Output (with no wishes yet):{ "action": "listing_wishes", "to": "Kavya", "wishes": [] }
+        Expected Output (with no wishes yet):{ "action": "listing_wishes", "to": "UPDRL8UDV", "wishes": [] }
         3. General Queries:
         Description: These are any questions not related to collecting or listing anniversary wishes (e.g., "What is the reimbursement policy?").
         Your Task:Identify if the message is a general query and categorize it accordingly.
