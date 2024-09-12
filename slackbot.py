@@ -4,6 +4,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from dotenv import load_dotenv
 import re
 import json
+import requests
 
 from slack_sdk.errors import SlackApiError
 from bedrock_prompt import invoke_bedrock_model
@@ -32,6 +33,24 @@ def log_request(logger, body, next):
 def custom_error_handler(error, body, logger):
     logger.exception(f"Error: {error}")
     logger.info(f"Request body: {body}")
+
+def get_group_members(group_id):
+    url = "https://slack.com/api/usergroups.users.list"
+    headers = {
+      "Authorization": f"Bearer {slack_bot_token}"
+    }
+    params = {
+      "usergroup": group_id,
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+
+    if data.get("ok"):
+        return data.get("users")
+    else:
+        raise Exception(f"Failed to get members: {data.get('error')}")
+
 
 def get_parent_message(channel_id, thread_ts):
     try:
@@ -150,11 +169,24 @@ def handle_message(body, message, say):
 
         response = invoke_bedrock_model(prompt=text)
         json_response = json.loads(response['content'][0]['text'])
-        to = json_response['to']
+
+        to_users = json_response['to']
         from_users = json_response['from']
 
-        for user_id in from_users:
-            send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{to}>, work anniversary")
+        from_users_unpacked = []
+        for from_user in from_users:
+            if from_user.startswith('S'):
+                from_users_unpacked.extend(get_group_members(from_user))
+            else:
+                from_users_unpacked.append(from_user)
+
+        from_users_unpacked = list(set(from_users_unpacked))
+        to_users = list(set(to_users))
+
+        for user_id in from_users_unpacked:
+            for target_user in to_users:
+                if target_user != user_id:
+                    send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{target_user}>'s work anniversary")
 
 def main():
     handler = SocketModeHandler(app, slack_app_token)
