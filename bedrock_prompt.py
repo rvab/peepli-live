@@ -39,6 +39,16 @@ def invoke_bedrock_model(prompt):
         Example Input:
         "Who is the manager of Kavya?"
         Expected Output:{ "action": "general" }
+
+        4. Identify the wish:
+        Determine if the user's message contains a specific type of wish, such as an anniversary wish, birthday wish, farewell wish, or any other kind of positive sentiment. A wish typically includes expressions of goodwill or positive intention, like 'Happy Birthday!' or 'Congratulations on your anniversary!' If the message contains a specific type of wish, acknowledge it appropriately. If the message does not contain a wish, request clarification or additional information from the user. Ensure responses are friendly and contextually appropriate.
+        Your task: if it is a wish then reply with Yes else No. If you can't determine if it's a wish then reply No
+        Example Input: Happy birhday
+        Expected Output: Yes
+        Example Input: hehe you mad
+        Expected Output: No
+        Example Input: hehe you mad, happy birhday
+        Expected Output: Yes
     """
 
     request_body = {
