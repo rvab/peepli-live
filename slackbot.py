@@ -121,6 +121,13 @@ def handle_message(body, message, say):
     if event["channel_type"] == "im":
         text = event["text"]
 
+        response = invoke_bedrock_model(prompt=text)
+        json_response = json.loads(response['content'][0]['text'])
+        if json_response['action'] == 'general':
+            response = getBedrockResponse(input_text=text)
+            send_slack_message(event["channel"], response, event["ts"])
+            return
+
         print(f'TEsting arunnn - body: {body} and message: {message}')
 
         print(f"Received message: {text}")
@@ -131,62 +138,72 @@ def handle_message(body, message, say):
             parent_message = get_parent_message(channel_id, thread_ts)
 
             if parent_message:
-                print(f"Parent message text: {parent_message['text']}")
-                from_user = event["user"]
-                for_user = get_user_id_from_collect_wish_text(parent_message['text'])[0]
-                print(f"For user: {for_user}")
+                response = getBedrockResponse(input_text=text)
+                json_response = json.loads(response['content'][0]['text'])
+                if json_response['action'] == 'wish':
+                    print(f"Parent message text: {parent_message['text']}")
+                    from_user = event["user"]
+                    for_user = get_user_id_from_collect_wish_text(parent_message['text'])[0]
+                    print(f"For user: {for_user}")
 
-                print(f"From user: {from_user}, For user: {for_user}")
-                response = f"Recieved the following wish from you: {text}"
-                from_user_details = get_slack_user_details(from_user)
-                print(f'from_user asdfasdfadf - {from_user_details}')
-                from_user_values = {
-                    "name": from_user_details['real_name'],
-                    "email": from_user_details['name'],
-                    "profile_pic": from_user_details['image_original'],
-                    "slack_user_id": from_user_details['id']
-                }
-                print(f'for_user asdfasdfadf - {get_slack_user_details(for_user)}')
-                for_user_details = get_slack_user_details(for_user)
-                for_user_values = {
-                    "name": for_user_details['real_name'],
-                    "email": for_user_details['name'],
-                    "profile_pic": for_user_details['image_original'],
-                    "slack_user_id": for_user_details['id']
-                }
+                    print(f"From user: {from_user}, For user: {for_user}")
+                    response = f"Recieved the following wish from you: {text}"
+                    from_user_details = get_slack_user_details(from_user)
+                    print(f'from_user asdfasdfadf - {from_user_details}')
+                    from_user_values = {
+                        "name": from_user_details['real_name'],
+                        "email": from_user_details['name'],
+                        "profile_pic": from_user_details['image_original'],
+                        "slack_user_id": from_user_details['id']
+                    }
+                    print(f'for_user asdfasdfadf - {get_slack_user_details(for_user)}')
+                    for_user_details = get_slack_user_details(for_user)
+                    for_user_values = {
+                        "name": for_user_details['real_name'],
+                        "email": for_user_details['name'],
+                        "profile_pic": for_user_details['image_original'],
+                        "slack_user_id": for_user_details['id']
+                    }
 
-                # Add messages (users will be created automatically if they don't exist)
-                add_message(
-                    conn,
-                    from_user_values,
-                    for_user_values,
-                    text
-                )
-                # response = f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}"
-                send_slack_message(event["channel"], response, event["ts"])
+                    # Add messages (users will be created automatically if they don't exist)
+                    add_message(
+                        conn,
+                        from_user_values,
+                        for_user_values,
+                        text
+                    )
+                    # response = f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}"
+                    send_slack_message(event["channel"], response, event["ts"])
+
+                else: 
+                    say("Please provide a appropriate wish. ")
+
             else:
                 print("Couldn't retrieve parent message")
 
         response = invoke_bedrock_model(prompt=text)
         json_response = json.loads(response['content'][0]['text'])
 
-        to_users = json_response['to']
-        from_users = json_response['from']
+        if json_response['action'] == 'collecting_wishes':
+            to_users = json_response['to']
+            from_users = json_response['from']
 
-        from_users_unpacked = []
-        for from_user in from_users:
-            if from_user.startswith('S'):
-                from_users_unpacked.extend(get_group_members(from_user))
-            else:
-                from_users_unpacked.append(from_user)
+            from_users_unpacked = []
+            for from_user in from_users:
+                if from_user.startswith('S'):
+                    from_users_unpacked.extend(get_group_members(from_user))
+                else:
+                    from_users_unpacked.append(from_user)
 
-        from_users_unpacked = list(set(from_users_unpacked))
-        to_users = list(set(to_users))
+            from_users_unpacked = list(set(from_users_unpacked))
+            to_users = list(set(to_users))
 
-        for user_id in from_users_unpacked:
-            for target_user in to_users:
-                if target_user != user_id:
-                    send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{target_user}>'s work anniversary")
+            for user_id in from_users_unpacked:
+                for target_user in to_users:
+                    if target_user != user_id:
+                        send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{target_user}>'s work anniversary")
+        elif json_response['action'] == 'listing_wishes':
+            say("Listing wishes: Pending implementation from Arun")
 
 def main():
     handler = SocketModeHandler(app, slack_app_token)
