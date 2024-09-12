@@ -4,11 +4,16 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from dotenv import load_dotenv
 import re
 import json
-import requests
+
 from slack_sdk.errors import SlackApiError
 from bedrock_prompt import invoke_bedrock_model
 from bedrock_rag import getBedrockResponse
 from constants import slack_bot_token, slack_app_token
+
+from sqlite_helper import add_message, get_user_messages, initialize_database
+
+conn = initialize_database()
+
 
 load_dotenv()
 
@@ -27,24 +32,6 @@ def log_request(logger, body, next):
 def custom_error_handler(error, body, logger):
     logger.exception(f"Error: {error}")
     logger.info(f"Request body: {body}")
-
-
-def get_group_members(group_id):
-    url = "https://slack.com/api/usergroups.users.list"
-    headers = {
-      "Authorization": f"Bearer {slack_bot_token}"
-    }
-    params = {
-      "usergroup": group_id,
-    }
-    
-    response = requests.get(url, headers=headers, params=params)
-    data = response.json()
-
-    if data.get("ok"):
-        return data.get("users")
-    else:
-        raise Exception(f"Failed to get members: {data.get('error')}")
 
 def get_parent_message(channel_id, thread_ts):
     try:
@@ -73,6 +60,33 @@ def send_slack_message(channel_id, message, thread_ts=None):
 def get_user_id_from_collect_wish_text(text):
     pattern = r'Wish for <@([A-Z0-9]+)>'
     return re.findall(pattern, text)
+
+def get_slack_user_details(user_id):
+    try:
+        # Call the users.info method using the WebClient
+        result = app.client.users_info(user=user_id)
+
+        user = result["user"]
+        # Extract relevant user details
+        user_details = {
+            "id": user.get("id"),
+            "name": user.get("name"),
+            "real_name": user.get("real_name"),
+            "display_name": user.get("profile", {}).get("display_name"),
+            # "email": user.get("profile", {}).get("email"),
+            "email": user.get("name") + '@fyle.in',
+            "image_original": user.get("profile", {}).get("image_original"),
+            "title": user.get("profile", {}).get("title"),
+            "team": user.get("team_id"),
+            "is_admin": user.get("is_admin", False),
+            "is_owner": user.get("is_owner", False),
+            "is_bot": user.get("is_bot", False)
+        }
+
+        return user_details
+    except Exception as e:
+        print(f"Error fetching user details: {e}")
+        return None
 
 # Event listener for mentions
 @app.event("app_mention")
@@ -105,6 +119,30 @@ def handle_message(body, message, say):
 
                 print(f"From user: {from_user}, For user: {for_user}")
                 response = f"Recieved the following wish from you: {text}"
+                from_user_details = get_slack_user_details(from_user)
+                print(f'from_user asdfasdfadf - {from_user_details}')
+                from_user_values = {
+                    "name": from_user_details['real_name'],
+                    "email": from_user_details['name'],
+                    "profile_pic": from_user_details['image_original'],
+                    "slack_user_id": from_user_details['id']
+                }
+                print(f'for_user asdfasdfadf - {get_slack_user_details(for_user)}')
+                for_user_details = get_slack_user_details(for_user)
+                for_user_values = {
+                    "name": for_user_details['real_name'],
+                    "email": for_user_details['name'],
+                    "profile_pic": for_user_details['image_original'],
+                    "slack_user_id": for_user_details['id']
+                }
+
+                # Add messages (users will be created automatically if they don't exist)
+                add_message(
+                    conn,
+                    from_user_values,
+                    for_user_values,
+                    text
+                )
                 # response = f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}"
                 send_slack_message(event["channel"], response, event["ts"])
             else:
@@ -112,25 +150,11 @@ def handle_message(body, message, say):
 
         response = invoke_bedrock_model(prompt=text)
         json_response = json.loads(response['content'][0]['text'])
-        to_users = json_response['to']
+        to = json_response['to']
         from_users = json_response['from']
 
-        users = []
-        for from_user in from_users:
-            if from_user.startswith('S'):
-                users.extend(get_group_members(from_user))
-            else:
-                users.append(from_user)
-
-        users = list(set(users))
-        to_users = list(set(to_users))
-
-        for user_id in users:
-            for target_user in to_users:
-                if target_user != user_id:
-                    send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{target_user}>, work anniversary")
-        # response = getBedrockResponse(input_text=text)
-        # say(response)
+        for user_id in from_users:
+            send_slack_message(user_id, f"Hello <@{user_id}>! Wish for <@{to}>, work anniversary")
 
 def main():
     handler = SocketModeHandler(app, slack_app_token)
