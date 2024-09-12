@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 import re
 import json
 import requests
+import ast
 
 from slack_sdk.errors import SlackApiError
 from bedrock_prompt import classify_user_message
+from openai_prompt import classify_user_message_openai
 from bedrock_rag import get_kb_response
 from constants import slack_bot_token, slack_app_token
 
@@ -122,11 +124,8 @@ def handle_message(body, message, say):
         text = event["text"]
 
         # Find the action and other details from bedrock
-        raw_response = classify_user_message(prompt=text)
-        print(f"raw_response asdfasfasdfadsfasdfasdfasd: {raw_response['content'][0]['text']}")
-        classify_response = json.loads(raw_response['content'][0]['text'])
-
-        print(f"Classify response asdfasfasdfadsfasdfasdfasd: {classify_response}")
+        raw_response = classify_user_message_openai(prompt=text)
+        classify_response = ast.literal_eval(raw_response)
 
         # Help general query from KB
         if classify_response['action'] == 'general':
