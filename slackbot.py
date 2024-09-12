@@ -3,7 +3,6 @@ from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from dotenv import load_dotenv
 import re
-import json
 import requests
 import ast
 
@@ -13,10 +12,7 @@ from openai_prompt import classify_user_message_openai
 from bedrock_rag import get_kb_response
 from constants import slack_bot_token, slack_app_token
 
-from sqlite_helper import add_message, get_user_messages, initialize_database
-
-conn = initialize_database()
-
+from sqlite_helper import add_message_to_db, get_user_messages
 
 load_dotenv()
 
@@ -166,8 +162,7 @@ def handle_message(body, message, say):
                     }
 
                     # Add messages (users will be created automatically if they don't exist)
-                    add_message(
-                        conn,
+                    add_message_to_db(
                         from_user_values,
                         for_user_values,
                         text

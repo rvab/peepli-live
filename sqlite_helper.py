@@ -71,3 +71,8 @@ def get_user_messages(conn, id):
   ''', (id,))
   return cursor.fetchall()
 
+
+conn = initialize_database()
+
+def add_message_to_db(from_user, for_user, text):
+  add_message(conn, from_user, for_user, text)

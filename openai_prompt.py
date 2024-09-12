@@ -1,6 +1,5 @@
 import boto3
-from constants import region, model_id
-import json
+from constants import region
 import openai
 
 bedrock_prompt_client = boto3.client(service_name='bedrock-runtime', region_name=region)
