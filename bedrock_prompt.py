@@ -17,9 +17,9 @@ def invoke_bedrock_model(prompt):
         Return this information in a structured format.
         Example Input:
         "collect anniversary wishes to @Arun from @team_notifications, @team_infinite_minds"
-        Expected Output: {"action": "collecting wishes","to": ["UPDRL8UDV"], "from": ['S07LW5KUGCT', 'SNL3JTZ8E']}
+        Expected Output: {"action": "collecting_wishes","to": ["UPDRL8UDV"], "from": ['S07LW5KUGCT', 'SNL3JTZ8E']}
          "collect anniversary wishes to @Arun from @AB, @team_infinite_minds"
-        Expected Output: {"action": "collecting wishes","to": ["UPDRL8UDV"], "from": ['UPDRL8UDV', 'SNL3JTZ8E']}
+        Expected Output: {"action": "collecting_wishes","to": ["UPDRL8UDV"], "from": ['UPDRL8UDV', 'SNL3JTZ8E']}
         2. Listing Wishes for an Employee:
         Example Formats:"List down all the wishes for [EmployeeName]"
         "Who wished [EmployeeName] for the anniversary?"
@@ -29,10 +29,10 @@ def invoke_bedrock_model(prompt):
         If no wishes have been collected, return an empty array for the wishes field.
         Example Input:
         "List down all the wishes for Kavya"
-        Expected Output:|{"action": "listing wishes", "to": "Kavya","wishes": [{"AB": "congratulations"},{"Chethan": "Hi"}]}
+        Expected Output:|{"action": "listing_wishes", "to": "Kavya","wishes": [{"AB": "congratulations"},{"Chethan": "Hi"}]}
         Example Input:
         "Who wished Kavya for anniversary?"
-        Expected Output (with no wishes yet):{ "action": "listing wishes", "to": "Kavya", "wishes": [] }
+        Expected Output (with no wishes yet):{ "action": "listing_wishes", "to": "Kavya", "wishes": [] }
         3. General Queries:
         Description: These are any questions not related to collecting or listing anniversary wishes (e.g., "What is the reimbursement policy?").
         Your Task:Identify if the message is a general query and categorize it accordingly.
@@ -44,11 +44,11 @@ def invoke_bedrock_model(prompt):
         Determine if the user's message contains a specific type of wish, such as an anniversary wish, birthday wish, farewell wish, or any other kind of positive sentiment. A wish typically includes expressions of goodwill or positive intention, like 'Happy Birthday!' or 'Congratulations on your anniversary!' If the message contains a specific type of wish, acknowledge it appropriately. If the message does not contain a wish, request clarification or additional information from the user. Ensure responses are friendly and contextually appropriate.
         Your task: if it is a wish then reply with Yes else No. If you can't determine if it's a wish then reply No
         Example Input: Happy birhday
-        Expected Output: Yes
+        Expected Output: { "action": "wish" }
         Example Input: hehe you mad
-        Expected Output: No
+        Expected Output: { "action": "not_wish" }
         Example Input: hehe you mad, happy birhday
-        Expected Output: Yes
+        Expected Output: { "action": "wish" }
     """
 
     request_body = {
