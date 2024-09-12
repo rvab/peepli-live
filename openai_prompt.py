@@ -49,6 +49,26 @@ def classify_user_message_openai(prompt):
         Expected Output: { "action": "not_wish" }
         Example Input: hehe you mad, happy birhday
         Expected Output: { "action": "wish" }
+
+        5. Identify if the prompt is a anniversary related query
+        Example Input: "Get the list of people celebrating anniversary in the next week?"
+        Expected Output: { "action": "anniversary_related_query" }
+        Example Input: "Get the list of people celebrating birthday in the next month?"
+        Expected Output: { "action": "not_anniversary_related_query" }
+
+        6.You are tasked with generating a greeting card and returning the appropriate action and card type for various occasions. Based on the provided input or context, classify the type of card (e.g., birthday, anniversary, etc.) and ensure the output is structured as follows:
+        Action: Always set to "wish".
+        Card Type: Dynamically define whether it's a birthday card, anniversary card, or another type based on the occasion (e.g., "birthday", "anniversary", "congratulations", etc.).
+        Return the expected output in the following format:
+        {
+            "action": "generate_card",
+            "card_type": "<card_type>"
+        }
+        Example Output for an anniversary card:
+        {
+            "action": "generate_card",
+            "card_type": "anniversary"
+        }
     """
 
     response = openai.chat.completions.create(
@@ -62,5 +82,3 @@ def classify_user_message_openai(prompt):
 
     response_content = response.choices[0].message.content
     return response_content
-
-  
