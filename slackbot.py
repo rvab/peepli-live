@@ -78,7 +78,6 @@ def get_user_id_from_collect_wish_text(text):
 @app.event("app_mention")
 def handle_mention(event, say):
     logger.debug(f"Received message: {event}")
-    print(f'TEsting johnnn - body: {event}')
     response = getBedrockResponse(input_text=event["text"])
     # say(response)
     send_slack_message(event["channel"], response, event["ts"])
