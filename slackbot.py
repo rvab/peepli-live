@@ -53,12 +53,6 @@ def get_group_members(group_id):
         raise Exception(f"Failed to get members: {data.get('error')}")
 
 
-
-def get_user_ids_from_mentions(text):
-    pattern = r'<@([A-Z0-9]+)>'
-    return re.findall(pattern, text)
-
-
 def get_parent_message(channel_id, thread_ts):
     try:
         result = app.client.conversations_replies(
@@ -106,15 +100,21 @@ def handle_message(body, message, say):
 
         print(f"Received message: {text}")
         if "thread_ts" in message:
-            thread_ts = body["thread_ts"]
+            thread_ts = message["thread_ts"]
             channel_id = message["channel"]
 
             parent_message = get_parent_message(channel_id, thread_ts)
-            say(f"This is a reply in a thread. Thread timestamp: {thread_ts}")
 
             if parent_message:
-
                 print(f"Parent message text: {parent_message['text']}")
+                from_user = event["user"]
+                for_user = get_user_id_from_collect_wish_text(parent_message['text'])[0]
+                print(f"For user: {for_user}")
+
+                print(f"From user: {from_user}, For user: {for_user}")
+                response = f"Recieved the following wish from you: {text}"
+                # response = f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}"
+                send_slack_message(event["channel"], response, event["ts"])
             else:
                 print("Couldn't retrieve parent message")
 
