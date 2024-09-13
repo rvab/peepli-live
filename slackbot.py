@@ -13,6 +13,9 @@ from openai_prompt import classify_user_message_openai
 from bedrock_rag import get_kb_response
 from constants import slack_bot_token, slack_app_token
 from generate_card import generate_card_for_user
+from load_employee_data import load_employee_data
+import numpy as np
+from datetime import datetime
 
 from sqlite_helper import add_message_to_db, get_user_messages, get_distinct_wished_user_receiver_user_combinations
 
@@ -23,6 +26,15 @@ logger = logging.getLogger(__name__)
 
 
 app = App(token=slack_bot_token)
+
+employee_data = load_employee_data()
+
+def ordinal_suffix(n):
+    if 11 <= n % 100 <= 13:
+        return f"{n}th"
+    else:
+        suffixes = {1: "st", 2: "nd", 3: "rd"}
+        return f"{n}{suffixes.get(n % 10, 'th')}"
 
 @app.middleware  # Register a middleware to log all incoming events
 def log_request(logger, body, next):
@@ -50,6 +62,38 @@ def get_group_members(group_id):
         return data.get("users")
     else:
         raise Exception(f"Failed to get members: {data.get('error')}")
+
+
+def get_upcoming_anniversary(doj):
+
+    today = datetime.today()
+
+    current_year_anniversary = doj.replace(year=today.year)
+
+    if current_year_anniversary < today:
+        next_anniversary = doj.replace(year=today.year + 1)
+    else:
+        next_anniversary = current_year_anniversary
+
+    years_completed = next_anniversary.year - doj.year
+
+    return {
+        'next_anniversary_date': next_anniversary.strftime('%Y-%m-%d'),
+        'years_completed': ordinal_suffix(years_completed)
+    }
+
+def get_doj_of_user(user_id):
+    user = get_slack_user_details(user_id)
+    user_email = user['email']
+    doj_row = employee_data[employee_data['Email'] == user_email]
+    if not doj_row.empty:
+        doj = doj_row['FTE Start Date'].values[0]
+        print(f"The Date of Joining for {user_email} is: {doj}", type(doj))
+        date_time = np.datetime64(doj)
+        date_str = str(date_time)[:10]
+        return date_str
+
+    print(f"No matching record found for {user_email}")
 
 
 def get_parent_message(channel_id, thread_ts):
@@ -92,8 +136,7 @@ def get_slack_user_details(user_id):
             "name": user.get("name"),
             "real_name": user.get("real_name"),
             "display_name": user.get("profile", {}).get("display_name"),
-            # "email": user.get("profile", {}).get("email"),
-            "email": user.get("name") + '@fyle.in',
+            "email": user.get("profile", {}).get("email"),
             "image_original": user.get("profile", {}).get("image_original"),
             "title": user.get("profile", {}).get("title"),
             "team": user.get("team_id"),
@@ -222,8 +265,10 @@ def handle_message(body, message, say):
                 for user_id in from_users_unpacked:
                     for target_user in to_users:
                         if target_user != user_id and (user_id, target_user) not in distinct_sender_receiver_mapping:
+                            doj = get_doj_of_user(target_user)
+                            upcoming_anniversary = get_upcoming_anniversary(datetime.strptime(doj, '%Y-%m-%d'))
                             send_slack_message(user_id, 
-                                               f"Hello <@{user_id}>! Give your wishes for <@{target_user}>'s work anniversary.  Please reply to this thread at the earliest"
+                                               f"Hello <@{user_id}>! Give your wishes for <@{target_user}>'s {upcoming_anniversary['years_completed']} work anniversary which is on {upcoming_anniversary['next_anniversary_date']}.  Please reply to this thread at the earliest"
                             )
 
                 formatted_from_users = ', '.join([f'<@{user_id}>' for user_id in from_users_unpacked])

@@ -8,6 +8,7 @@ def classify_user_message_openai(prompt):
 
     system_prompt = """
         You are an AI assistant tasked with analyzing messages related to anniversary wishes, listing employee wishes, or handling general queries. Your job is to identify the type of message and return structured information based on the context and when user is saying bye, thanks and similar words then just respond with thanks and don't add any more info. Fix any typos and proceed. Strictly stick to the output in the mentioned json format.
+        Forget the context of previous messages and focus on the current message only. You can use the following message types to guide your response:
         Message Types:
         1. Collecting Anniversary Wishes:
         Example Format: "collect anniversary wishes to @User1 from @User2, @User3, ..."
@@ -20,6 +21,12 @@ def classify_user_message_openai(prompt):
         Expected Output: {"action": "collecting_wishes","to": ["UPDRL8UDV"], "from": ['S07LW5KUGCT', 'SNL3JTZ8E']}
          "collect anniversary wishes to @Arun from @AB, @team_infinite_minds"
         Expected Output: {"action": "collecting_wishes","to": ["UPDRL8UDV"], "from": ['UPDRL8UDV', 'SNL3JTZ8E']}
+
+        Example Input:
+        "collect anniversary wishes to user1, user2, user3....  from user4, user5, user6...."
+        Expected Output: {"action": "collecting_wishes","to": ["user_id1", "user_id2", "user_id3"], "from": ['user_id5', 'user_id6', 'user_id7']}
+
+
         2. Listing Wishes for an Employee:
         Example Formats:"List down all the wishes for [EmployeeName]"
         "Who wished [EmployeeName] for the anniversary?"
@@ -49,13 +56,7 @@ def classify_user_message_openai(prompt):
         Example Input: hehe you mad, happy birhday
         Expected Output: { "action": "wish" }
 
-        5. Identify if the prompt is a anniversary related query
-        Example Input: "Get the list of people celebrating anniversary in the next week?"
-        Expected Output: { "action": "anniversary_related_query" }
-        Example Input: "Get the list of people celebrating birthday in the next month?"
-        Expected Output: { "action": "not_anniversary_related_query" }
-
-        6. Generating card for an employee based on occasions
+        5. Generating card for an employee based on occasions
         Example Formats:"Generate a card for [EmployeeName] for his anniversary."
         "Create a card for [EmployeeName] for his birthday."
         You are tasked with generating a greeting card and returning the employee name, appropriate action card type for various occasions. Based on the provided input or context, find the employee name, action type the type of card (e.g., birthday, anniversary, etc.) and ensure the output is structured as follows:
@@ -77,6 +78,7 @@ def classify_user_message_openai(prompt):
         Example Input:
         "Create a card for Kavya for her anniversary"
         Expected Output: { "action": "generate_card", "card_type": "anniversary", "to": "UPDRL8UDV" }
+
     """
 
     response = openai.chat.completions.create(
