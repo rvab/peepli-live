@@ -1,5 +1,4 @@
 import sqlite3
-from datetime import datetime
 
 def initialize_database():
   conn = sqlite3.connect('user_messages.db', check_same_thread=False)

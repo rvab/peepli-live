@@ -17,6 +17,12 @@ from load_employee_data import load_employee_data
 import numpy as np
 from datetime import datetime
 
+from image_generator.script1 import render_card as render_card_1
+from image_generator.script2 import render_card as render_card_2
+from image_generator.script3 import render_card as render_card_3
+renders = [render_card_1, render_card_2, render_card_3]
+
+
 from sqlite_helper import add_message_to_db, get_user_messages, get_distinct_wished_user_receiver_user_combinations
 
 load_dotenv()
@@ -294,6 +300,7 @@ def handle_message(body, message, say):
                     if len(requested_wishes_from) == 0:
                         print(f"No wishes to collect for {target_user}")
                         response = f'No wishes to collect for <@{target_user}>'
+                        return
                     else:
                         print(f"Sent requests to get wishes for {target_user} from {requested_wishes_from}")
                         formatted_from_users = ', '.join([f'<@{user_id}>' for user_id in requested_wishes_from])
@@ -336,10 +343,16 @@ def handle_message(body, message, say):
             if len(messages) == 0:
                 response = f'No wishes found for user <@{to_user}>'
                 send_slack_message(event["channel"], response, event["ts"])
+                return
             response = f'Generating card for user <@{to_user}>'
-            output_card = generate_card_for_user(to_user)
-            send_file_message(event["channel"], response, event["ts"], output_card, to_user)
-            return
+
+            try:
+                for render in renders:
+                    output_card = generate_card_for_user(to_user, render)
+                    send_file_message(event["channel"], response, event["ts"], output_card, to_user)
+            except:
+                response = 'Error in generating card'
+                send_slack_message(event["channel"], response, event["ts"])
 
 
 def main():

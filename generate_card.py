@@ -1,16 +1,11 @@
-import random
-
 from datetime import date
 
-from image_generator.script1 import render_card as render_card_1
-from image_generator.script2 import render_card as render_card_2
-from image_generator.script3 import render_card as render_card_3
 from image_generator.helpers import download_image
 
 from sqlite_helper import get_detailed_wishes_for_user, get_user_details
 
 
-def generate_card_for_user(user_id):
+def generate_card_for_user(user_id, render_card_func):
 
   raw_wishes = get_detailed_wishes_for_user(user_id)
   print(f'Raw wishes: {raw_wishes}')
@@ -39,12 +34,7 @@ def generate_card_for_user(user_id):
   output_card = f"{for_user_name}_{today}_card.jpg"
   print(f'Output card: {output_card}')
 
-  renders = [render_card_1, render_card_2, render_card_3]
-
-  # Choose a random option
-  render_card = random.choice(renders)
-
-  render_card(wishes, for_user_name, save_path, output_card)
+  render_card_func(wishes, for_user_name, save_path, output_card)
   return output_card
 
 # generate_card_for_user('UL9N5PX8V')
