@@ -240,10 +240,7 @@ def handle_message(body, message, say):
             response = f'Listing wishes for user <@{to_user}>\n'
             for message in messages:
                 response += f"{message[1].capitalize()} wished: {message[3]}\n"
-                # say(f"From: {message[1]}, To: {message[2]}, Content: {message[3]}, Time: {message[4]} UTC")
-            response = f"""
-                ```{response}```
-            """
+            response = f"""```{response}```"""
             send_slack_message(event["channel"], response, event["ts"])
 
             return
@@ -262,7 +259,6 @@ def handle_message(body, message, say):
             output_card = generate_card_for_user(to_user)
             send_file_message(event["channel"], response, event["ts"], output_card, to_user)
             return
-
 
 
 def main():
