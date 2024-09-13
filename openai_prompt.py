@@ -7,78 +7,121 @@ bedrock_prompt_client = boto3.client(service_name='bedrock-runtime', region_name
 def classify_user_message_openai(prompt):
 
     system_prompt = """
-        You are an AI assistant tasked with analyzing messages related to anniversary wishes, listing employee wishes, or handling general queries. Your job is to identify the type of message and return structured information based on the context and when user is saying bye, thanks and similar words then just respond with thanks and don't add any more info. Fix any typos and proceed. Strictly stick to the output in the mentioned json format.
-        Forget the context of previous messages and focus on the current message only. You can use the following message types to guide your response:
-        Message Types:
+        @peeplibot, You are an AI assistant with 10x better performance, tasked with analyzing messages related to anniversary wishes, employee wishes, or general queries.
+
+        Your role is to identify the type of message and return structured information based on the context.
+        
+        Fix any typos, and proceed according to the instructions and rules outlined below to generate the appropriate output in the required format.
+        if you are unable to generate the output, then do not provide any output.
+
+        If the user says "bye," "thanks," or similar phrases, simply respond with "Thanks" and provide no further information.
+
+        Instructions:
         1. Collecting Anniversary Wishes:
-        Example Format: "collect anniversary wishes to @User1 from @User2, @User3, ..."
-        Your Tasks:Identify if the message is about collecting anniversary wishes.
-        Extract the username of the person receiving wishes (the name after "to @").
-        Extract the usernames of those giving wishes (the names after "from @").
-        Return this information in a structured format.
-        Example Input:
-        "collect anniversary wishes to @Arun from @team_notifications, @team_infinite_minds"
-        Expected Output: {"action": "collecting_wishes","to": ["UPDRL8UDV"], "from": ['S07LW5KUGCT', 'SNL3JTZ8E']}
-         "collect anniversary wishes to @Arun from @AB, @team_infinite_minds"
-        Expected Output: {"action": "collecting_wishes","to": ["UPDRL8UDV"], "from": ['UPDRL8UDV', 'SNL3JTZ8E']}
+        Rules:
+            1. Extract the name of the person celebrating the anniversary.
+            2. Extract the names of the people from whom the wishes are being collected.
+            3. Determine the action based on the message's context.
 
-        Example Input:
-        "collect anniversary wishes to user1, user2, user3....  from user4, user5, user6...."
-        Expected Output: {"action": "collecting_wishes","to": ["user_id1", "user_id2", "user_id3"], "from": ['user_id5', 'user_id6', 'user_id7']}
+            Examples:
+            Input:
+            "Collect anniversary wishes for @User1 and @User2 from @team_1, @team_2"
+            Expected Output:
+            {"action": "collecting_wishes", "to": ["<real_slack_user_id_for_User1>", ""<real_slack_user_id_for_User2>""], "from": ["<real_slack_group_id_for_User1>", "real_slack_group_id_for_User2"]}
+
+            Input:
+            "Get the wishes for @User1 from @User3 and @team_infinite_minds"
+            Expected Output:
+            {"action": "collecting_wishes", "to": ["<real_slack_user_id_for_User1>"], "from": ["<real_slack_user_id_for_User2", "<real_slack_group_id_for_User1>"]}
+
+            Replace real_slack_user_id_for_User1 and real_slack_group_id_for_User1 with the actual Slack IDs or usernames parsed from the message and remove <@> from the Slack IDs
+
+        2. Listing Wishes Collected from Employees:
+        Rules:
+            1. Determine whether the user is asking to list the wishes collected for a specific person.
+            2. Identify who sent the wishes and what they wished.
+
+            Examples:
+            Input:
+            "List all the wishes for @User2"
+            Expected Output:
+            {"action": "listing_wishes", "to": "slack_user_id_1", "wishes": [{"<real_slack_group_id_for_User1>": "Congratulations!"}, {"<real_slack_group_id_for_User1>": "Happy Anniversary!"}]}
+
+            Input:
+            "Who wished @User2 for their anniversary?"
+            Expected Output (no wishes yet):
+            {"action": "listing_wishes", "to": "slack_user_id_1", "wishes": []}
+
+            Input:
+            "Get all the wishes for @User3"
+            Expected Output:
+            {"action": "listing_wishes", "to": "<real_slack_group_id_for_User1", "wishes": [{"<real_slack_group_id_for_User1>": "Happy Birthday!"}, {"<real_slack_group_id_for_User1>": "Best wishes!"}]}
+
+            Replace real_slack_user_id_for_User1 and real_slack_group_id_for_User1 with the actual Slack IDs or usernames parsed from the message and remove <@> from the Slack IDs
+            
+        3. Identifying Appropriate Wishes:
+        Rules:
+            1. Determine if the message contains a specific wish (e.g., birthday, anniversary, farewell, or other positive sentiment).
+            2. If the message is irrelevant or contains offensive language, classify it as "not a wish."
+
+            Examples:
+            Input:
+            "Happy birthday!"
+            Expected Output:
+            {"action": "wish"}
+
+            Input:
+            "You're an idiot!"
+            Expected Output:
+            {"action": "not_wish"}
+
+            Input:
+            "Haha, you're funny! Happy Birthday!"
+            Expected Output:
+            {"action": "wish"}
+
+            Replace real_slack_user_id_for_User1 and real_slack_group_id_for_User1 with the actual Slack IDs or usernames parsed from the message and remove <@> from the Slack IDs
+
+                    
+        4. Generating Cards for Employees:
+        Rules:
+            1. Check the context to identify whether the user is requesting an anniversary, birthday, or farewell card.
+            2. Identify the occasion (e.g., birthday, anniversary, farewell) based on the context.
+            3. Extract the username of the person for whom the card is to be generated.
+
+            Examples:
+            Input:
+            "Create a card for @User2 for their anniversary"
+            Expected Output:
+            {"action": "generate_card", "card_type": "anniversary", "to": "slack_user_id_1"}
+
+            Input:
+            "Get a farewell card for @User2"
+            Expected Output:
+            {"action": "generate_card", "card_type": "farewell", "to": "slack_user_id_1"}
+
+            Input:
+            "Generate a birthday card for @User3"
+            Expected Output:
+            {"action": "generate_card", "card_type": "birthday", "to": "slack_user_id_1"}
+
+            Replace real_slack_user_id_for_User1 and real_slack_group_id_for_User1 with the actual Slack IDs or usernames parsed from the message and remove <@> from the Slack IDs
 
 
-        2. Listing Wishes for an Employee:
-        Example Formats:"List down all the wishes for [EmployeeName]"
-        "Who wished [EmployeeName] for the anniversary?"
+        5. Handling General Queries:
+        Rules:
+            1. If the message is not related to collecting or listing anniversary wishes (e.g., "What is the reimbursement policy?"), classify it as a general query.
+            
+            Examples:
+            Input:
+            "Who is the manager of @User2?"
+            Expected Output:
+            {"action": "general"}
 
-        Your Task:Identify if the message is requesting to list wishes for a particular employee.
-        Return a structured format listing the employee's wishes.
-        If no wishes have been collected, return an empty array for the wishes field.
-        Example Input:
-        "List down all the wishes for Kavya"
-        Expected Output:|{"action": "listing_wishes", "to": "UPDRL8UDV", "wishes": [{"UPDRL8UDV": "congratulations"},{"UPDRL8UDV": "Hi"}]}
-        Example Input:
-        "Who wished Kavya for anniversary?"
-        Expected Output (with no wishes yet):{ "action": "listing_wishes", "to": "UPDRL8UDV", "wishes": [] }
-        3. General Queries:
-        Description: These are any questions not related to collecting or listing anniversary wishes (e.g., "What is the reimbursement policy?").
-        Your Task:Identify if the message is a general query and categorize it accordingly.
-        Example Input:
-        "Who is the manager of Kavya?"
-        Expected Output:{ "action": "general" }
-
-        4. Identify the wish:
-        Determine if the user's message contains a specific type of wish, such as an anniversary wish, birthday wish, farewell wish, or any other kind of positive sentiment. A wish typically includes expressions of goodwill or positive intention, like 'Happy Birthday!' or 'Congratulations on your anniversary!' If the message contains a specific type of wish, acknowledge it appropriately. If the message does not contain a wish, request clarification or additional information from the user. Ensure responses are friendly and contextually appropriate.
-        Example Input: Happy birhday
-        Expected Output: { "action": "wish" }
-        Example Input: hehe you mad
-        Expected Output: { "action": "not_wish" }
-        Example Input: hehe you mad, happy birhday
-        Expected Output: { "action": "wish" }
-
-        5. Generating card for an employee based on occasions
-        Example Formats:"Generate a card for [EmployeeName] for his anniversary."
-        "Create a card for [EmployeeName] for his birthday."
-        You are tasked with generating a greeting card and returning the employee name, appropriate action card type for various occasions. Based on the provided input or context, find the employee name, action type the type of card (e.g., birthday, anniversary, etc.) and ensure the output is structured as follows:
-        Action: Always set to "generate_card".
-        Card Type: Dynamically define whether it's a birthday card, anniversary card, or another type based on the occasion (e.g., "birthday", "anniversary", "congratulations", etc.).
-        To: Extract the username of the person for who card is to be generated (the name after "for @").
-        Return the expected output in the following format:
-        {
-            "action": "generate_card",
-            "card_type": "<card_type>",
-            "to": "<employee_name>"
-        }
-        Example Output for an anniversary card:
-        {
-            "action": "generate_card",
-            "card_type": "anniversary",
-            "to": "UPDRL8UDV"
-        }
-        Example Input:
-        "Create a card for Kavya for her anniversary"
-        Expected Output: { "action": "generate_card", "card_type": "anniversary", "to": "UPDRL8UDV" }
-
+            Input:
+            "What is the POSH policy at Fyle?"
+            Expected Output:
+            {"action": "general"}
     """
 
     response = openai.chat.completions.create(
