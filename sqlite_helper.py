@@ -62,12 +62,21 @@ def add_message(conn, from_user, for_user, content):
 def get_user_messages(id):
   cursor = conn.cursor()
   cursor.execute('''
-  SELECT m.id, u_from.name as from_user, u_for.name as for_user, m.content, m.created_at
-  FROM messages m
-  JOIN users u_from ON m.from_user_id = u_from.id
-  JOIN users u_for ON m.for_user_id = u_for.id
-  WHERE u_for.id = ?
-  ORDER BY m.created_at DESC
+  with cte1 as (
+    SELECT
+      m.id,
+      u_from.name as from_user,
+      u_for.name as for_user,
+      m.content,
+      m.created_at,
+      ROW_NUMBER() OVER (PARTITION BY m.from_user_id, m.for_user_id ORDER BY m.created_at desc) AS rn
+    FROM messages m
+    JOIN users u_from ON m.from_user_id = u_from.id
+    JOIN users u_for ON m.for_user_id = u_for.id
+    WHERE u_for.id = ?
+    ORDER BY m.created_at DESC
+  )
+  select * from cte1 where rn = 1;
   ''', (id,))
   return cursor.fetchall()
 
