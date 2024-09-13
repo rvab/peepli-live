@@ -5,12 +5,14 @@ from dotenv import load_dotenv
 import re
 import requests
 import ast
+import os
 
 from slack_sdk.errors import SlackApiError
-from bedrock_prompt import classify_user_message
+# from bedrock_prompt import classify_user_message
 from openai_prompt import classify_user_message_openai
 from bedrock_rag import get_kb_response
 from constants import slack_bot_token, slack_app_token
+from generate_card import generate_card_for_user
 
 from sqlite_helper import add_message_to_db, get_user_messages
 
@@ -105,12 +107,27 @@ def get_slack_user_details(user_id):
         print(f"Error fetching user details: {e}")
         return None
 
+def send_file_message(channel, response, event_ts, file_path, user_id):
+    if not os.path.isfile(file_path):
+        response = "Sorry, I couldn't find the sample file."
+    else:
+        try:
+            result = app.client.files_upload_v2(
+                channels=channel,
+                file=file_path,
+                initial_comment=f":done: Generated card for user <@{user_id}>",
+                thread_ts=event_ts
+            )
+        except Exception as e:
+            response = f"An error occurred while sending the file: {str(e)}"
+
+    send_slack_message(channel, response, event_ts)
+
 # Event listener for mentions
 @app.event("app_mention")
 def handle_mention(event, say):
     logger.debug(f"Received message: {event}")
     response = get_kb_response(input_text=event["text"])
-    # say(response)
     send_slack_message(event["channel"], response, event["ts"])
 
 @app.event("message")
@@ -205,7 +222,7 @@ def handle_message(body, message, say):
                 formatted_from_users = ', '.join([f'<@{user_id}>' for user_id in from_users_unpacked])
                 formatted_to_users = ', '.join([f'<@{user_id}>' for user_id in to_users])
 
-                response = f'Sent requests to get wishes from {formatted_from_users} for {formatted_to_users}'
+                response = f'Sent requests to get wishes from {formatted_from_users} for {formatted_to_users}. '
             except Exception as e:
                 print(f"Error: {e}")
                 response = 'Error in collecting wishes'
@@ -217,10 +234,36 @@ def handle_message(body, message, say):
         if classify_response['action'] == 'listing_wishes':
             to_user = classify_response['to']
             user_id = event["user"]
-            messages = get_user_messages(conn, to_user)
+            if '@' in user_id:
+                user_id = user_id[2:-1]
+            messages = get_user_messages(to_user)
+            response = f'Listing wishes for user <@{to_user}>\n'
             for message in messages:
-                say(f"From: {message[1]}, To: {message[2]}, Content: {message[3]}, Time: {message[4]}")
+                response += f"{message[1].capitalize()} wished: {message[3]}\n"
+                # say(f"From: {message[1]}, To: {message[2]}, Content: {message[3]}, Time: {message[4]} UTC")
+            response = f"""
+                ```{response}```
+            """
+            send_slack_message(event["channel"], response, event["ts"])
+
             return
+
+        # Generate card for an user
+        if classify_response['action'] == 'generate_card':
+            to_user = classify_response['to']
+            user_id = event["user"]
+            if '@' in user_id:
+                user_id = user_id[2:-1]
+            messages = get_user_messages(to_user)
+            if len(messages) == 0:
+                response = f'No wishes found for user <@{to_user}>'
+                send_slack_message(event["channel"], response, event["ts"])
+            response = f'Generating card for user <@{to_user}>'
+            output_card = generate_card_for_user(to_user)
+            send_file_message(event["channel"], response, event["ts"], output_card, to_user)
+            return
+
+
 
 def main():
     handler = SocketModeHandler(app, slack_app_token)

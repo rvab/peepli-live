@@ -59,7 +59,7 @@ def add_message(conn, from_user, for_user, content):
   conn.commit()
   return cursor.lastrowid
 
-def get_user_messages(conn, id):
+def get_user_messages(id):
   cursor = conn.cursor()
   cursor.execute('''
   SELECT m.id, u_from.name as from_user, u_for.name as for_user, m.content, m.created_at
@@ -71,6 +71,33 @@ def get_user_messages(conn, id):
   ''', (id,))
   return cursor.fetchall()
 
+def get_user_details(id):
+  cursor = conn.cursor()
+  cursor.execute('''
+  SELECT name, email, profile_pic FROM users WHERE id = ?
+  ''', (id,))
+  return cursor.fetchone()
+
+def get_detailed_wishes_for_user(id):
+  cursor = conn.cursor()
+  cursor.execute('''
+  with cte1 as (
+    SELECT
+      m.id,
+      u_from.name as from_user_name,
+      u_from.profile_pic as from_user_profile_pic,
+      m.content,
+      m.created_at,
+      ROW_NUMBER() OVER (PARTITION BY m.from_user_id, m.for_user_id ORDER BY m.created_at desc) AS rn
+    FROM messages m
+    JOIN users u_from ON m.from_user_id = u_from.id
+    JOIN users u_for ON m.for_user_id = u_for.id
+    WHERE u_for.id = ?
+    ORDER BY m.created_at DESC
+  )
+  select * from cte1 where rn = 1;
+  ''', (id,))
+  return cursor.fetchall()
 
 conn = initialize_database()
 
