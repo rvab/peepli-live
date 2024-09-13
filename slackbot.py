@@ -245,10 +245,14 @@ def handle_message(body, message, say):
                 user_id = user_id[2:-1]
             messages = get_user_messages(to_user)
             response = f'Listing wishes for user <@{to_user}>\n'
-            for message in messages:
-                response += f"{message[1].capitalize()} wished: {message[3]}\n"
-            response = f"""```{response}```"""
-            send_slack_message(event["channel"], response, event["ts"])
+            if len(messages) == 0:
+                response = f'No wishes found for user <@{to_user}>'
+                send_slack_message(event["channel"], response, event["ts"])
+            else:
+                for message in messages:
+                    response += f"{message[1].capitalize()} wished: {message[3]}\n"
+                    response = f"""```{response}```"""
+                    send_slack_message(event["channel"], response, event["ts"])
 
             return
 
