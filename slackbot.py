@@ -297,7 +297,7 @@ def handle_message(body, message, say):
                 for message in messages:
                     response += f"{message[1].capitalize()} wished: {message[3]}\n"
                     response = f"""```{response}```"""
-                    send_slack_message(event["channel"], response, event["ts"])
+                send_slack_message(event["channel"], response, event["ts"])
 
             return
 
