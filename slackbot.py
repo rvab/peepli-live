@@ -261,25 +261,50 @@ def handle_message(body, message, say):
                 for mapping in distinct_sender_receiver_mapping:
                     print(f'From: {mapping[0]}, To: {mapping[1]}')
 
+                wishes_sent_for = {}
+                print(f"From users: {from_users_unpacked}, To users: {to_users}")
 
-                for user_id in from_users_unpacked:
-                    for target_user in to_users:
-                        if target_user != user_id and (user_id, target_user) not in distinct_sender_receiver_mapping:
-                            doj = get_doj_of_user(target_user)
-                            upcoming_anniversary = get_upcoming_anniversary(datetime.strptime(doj, '%Y-%m-%d'))
-                            send_slack_message(user_id, 
-                                               f"Hello <@{user_id}>! Give your wishes for <@{target_user}>'s {upcoming_anniversary['years_completed']} work anniversary which is on {upcoming_anniversary['next_anniversary_date']}.  Please reply to this thread at the earliest"
+                for target_user in to_users: # to_users is the list of users for whom we are collecting wishes
+                    doj = get_doj_of_user(target_user)
+                    upcoming_anniversary = get_upcoming_anniversary(datetime.strptime(doj, '%Y-%m-%d'))
+                    requested_wishes_from = []
+                    for receiver_user in from_users_unpacked:
+                        if receiver_user != target_user and (receiver_user, target_user) not in distinct_sender_receiver_mapping:
+                            send_slack_message(receiver_user, 
+                                f"Hello <@{receiver_user}>! Give your wishes for <@{target_user}>'s {upcoming_anniversary['years_completed']} work anniversary which is on {upcoming_anniversary['next_anniversary_date']}.  Please reply to this thread at the earliest"
                             )
+                            requested_wishes_from.append(receiver_user)
+                    wishes_sent_for[target_user] = requested_wishes_from
 
-                formatted_from_users = ', '.join([f'<@{user_id}>' for user_id in from_users_unpacked])
-                formatted_to_users = ', '.join([f'<@{user_id}>' for user_id in to_users])
+                # for user_id in from_users_unpacked:
+                #     requested_wishes_from = []
+                #     for target_user in to_users:
+                #         if target_user != user_id and (user_id, target_user) not in distinct_sender_receiver_mapping:
+                #             doj = get_doj_of_user(target_user)
+                #             upcoming_anniversary = get_upcoming_anniversary(datetime.strptime(doj, '%Y-%m-%d'))
+                #             send_slack_message(user_id, 
+                #                 f"Hello <@{user_id}>! Give your wishes for <@{target_user}>'s {upcoming_anniversary['years_completed']} work anniversary which is on {upcoming_anniversary['next_anniversary_date']}.  Please reply to this thread at the earliest"
+                #             )
+                #             requested_wishes_from.append(target_user)
+                #             wishes_sent_for[target_user] = user_id
 
-                response = f'Sent requests to get wishes from {formatted_from_users} for {formatted_to_users}. Note: For users who have already wished, the message will not be sent again.'
+                print(f"Wishes sent for: {wishes_sent_for}")
+                for target_user, requested_wishes_from in wishes_sent_for.items():
+                    print(f"asdfasdfn Target user: {target_user}, requested_wishes_from: {requested_wishes_from}")
+                    if len(requested_wishes_from) == 0:
+                        print(f"No wishes to collect for {target_user}")
+                        response = f'No wishes to collect for <@{target_user}>'
+                    else:
+                        print(f"Sent requests to get wishes for {target_user} from {requested_wishes_from}")
+                        formatted_from_users = ', '.join([f'<@{user_id}>' for user_id in requested_wishes_from])
+                        target_user = f'<@{target_user}>'
+                        print(f"Sent requests to get wishes for {target_user} from {formatted_from_users}")
+                        response = f'Sent requests to get wishes for {target_user} from {formatted_from_users}. Note: For users who have already wished, the message will not be sent again.'
+                    send_slack_message(event["channel"], response, event["ts"])
             except Exception as e:
                 print(f"Error: {e}")
                 response = 'Error in collecting wishes'
-
-            send_slack_message(event["channel"], response, event["ts"])
+                send_slack_message(event["channel"], response, event["ts"])
             return
 
         # Get wishes of an user
