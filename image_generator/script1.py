@@ -37,8 +37,8 @@ def draw_text_wrapped(draw, text, position, font, max_width):
 def render_card(team_wishes, employee_name, employee_img_path, output_path):
     # Load the template card (background image)
 
-    data_dir = os.path.join(BASE_DIR, 'data')
-    os.makedirs(data_dir, exist_ok=True)
+    # data_dir = os.path.join(BASE_DIR, 'data')
+    # os.makedirs(data_dir, exist_ok=True)
     card = Image.open(os.path.join(BASE_DIR, 'card_template_1.jpg'))
 
     # Load, resize, and make the employee's profile picture round with 150% size
@@ -57,24 +57,6 @@ def render_card(team_wishes, employee_name, employee_img_path, output_path):
 
     # Add employee's name and anniversary message (in bold and larger)
     draw.text((100, 1800), f"Happy Anniversary {employee_name}!", font=font_bold_large, fill="red")
-
-    # # Sample team member wishes
-    # team_wishes = [
-    #     {"name": "John Smith", "profile_pic": "john_profile.png", "wish": "Congrats on your milestone! You've done a great job and we are all proud of you!"},
-    #     {"name": "Emily Johnson", "profile_pic": "emily_profile.png", "wish": "Wishing you many more amazing years and continued success in your journey with us!"},
-    #     {"name": "Darek Brown", "profile_pic": "darek_profile.png", "wish": "Happy work anniversary! You've been an inspiration to all of us, and we're excited to keep working with you!"},
-    #     {"name": "Tanya Lee", "profile_pic": "tanya_profile.png", "wish": "Congratulations on your anniversary!"},
-    #     {"name": "Tom Cruise", "profile_pic": "tom_profile.png", "wish": "Congratulations buddy on your anniversary! Feeling happy for you! Hope to see you reach even greater heights!"},
-    #     {"name": "John Smith", "profile_pic": "john_profile.png", "wish": "Congrats on your milestone! You've done a great job and we are all proud of you!"},
-    #     {"name": "Emily Johnson", "profile_pic": "emily_profile.png", "wish": "Wishing you many more amazing years and continued success in your journey with us!"},
-    #     {"name": "Darek Brown", "profile_pic": "darek_profile.png", "wish": "Happy work anniversary! You've been an inspiration to all of us, and we're excited to keep working with you!"},
-    #     {"name": "Tanya Lee", "profile_pic": "tanya_profile.png", "wish": "Congratulations on your anniversary! Wishing you all the best in the coming years!"},
-    #     {"name": "Tom Cruise", "profile_pic": "tom_profile.png", "wish": "Congratulations buddy on your anniversary! Feeling happy for you! Hope to see you reach even greater heights!"},
-    #     {"name": "John Smith", "profile_pic": "john_profile.png", "wish": "Congrats on your milestone! You've done a great job and we are all proud of you!"},
-    #     {"name": "Emily Johnson", "profile_pic": "emily_profile.png", "wish": "Wishing you many more amazing years and continued success!"},
-    #     {"name": "Darek Brown", "profile_pic": "darek_profile.png", "wish": "Happy work anniversary! You've been an inspiration to all of us, and we're excited to keep working with you!"},
-    #     {"name": "Tanya Lee", "profile_pic": "tanya_profile.png", "wish": "Congratulations on your anniversary! Wishing you all the best in the coming years!"}
-    # ]
 
     # Define the starting position, column width, and column margins
     y_position = 2000
@@ -106,5 +88,5 @@ def render_card(team_wishes, employee_name, employee_img_path, output_path):
             x_position += column_width + column_margin + 1000  # Move to the next column
 
     # Save the final card
-    card.save(output_path)
+    card.save(output_path, 'PNG')
     print(f"Card saved to: {output_path}")

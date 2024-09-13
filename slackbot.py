@@ -155,7 +155,7 @@ def handle_message(body, message, say):
             parent_message = get_parent_message(channel_id, thread_ts)
 
             if parent_message:
-                if classify_response['action'] == 'wish':
+                # if classify_response['action'] == 'wish':
                     print(f"Parent message text: {parent_message['text']}")
                     from_user = event["user"]
                     for_user = get_user_id_from_collect_wish_text(parent_message['text'])[0]
@@ -186,13 +186,13 @@ def handle_message(body, message, say):
                     )
 
                     print(f"From user: {from_user}, For user: {for_user}")
-                    response = f"Recieved the following wish from you: {text}"
+                    response = f"Recieved the following wish from you: {text}. \n If you want to update your wish, please reply with new message to this thread."
                     # response = f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}"
-                else:
-                    response = "Please provide a appropriate wish."
+                # else:
+                #     response = "Please provide a appropriate wish."
 
-                send_slack_message(event["channel"], response, event["ts"])
-                return
+                    send_slack_message(event["channel"], response, event["ts"])
+                    return
             else:
                 print("Couldn't retrieve parent message")
 
