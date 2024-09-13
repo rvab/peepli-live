@@ -32,6 +32,15 @@ def initialize_database():
   conn.commit()
   return conn
 
+def get_distinct_wished_user_receiver_user_combinations(days=15):
+  cursor = conn.cursor()
+  days = f'-{days} day'
+  cursor.execute('''
+  SELECT DISTINCT from_user_id, for_user_id FROM messages
+  where created_at > datetime('now', ?)
+  ''', (days,))
+  return cursor.fetchall()
+
 def get_or_create_user(conn, name, email, profile_pic=None, slack_user_id=None):
   cursor = conn.cursor()
   cursor.execute('SELECT id FROM users WHERE email = ?', (email,))

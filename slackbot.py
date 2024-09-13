@@ -14,7 +14,7 @@ from bedrock_rag import get_kb_response
 from constants import slack_bot_token, slack_app_token
 from generate_card import generate_card_for_user
 
-from sqlite_helper import add_message_to_db, get_user_messages
+from sqlite_helper import add_message_to_db, get_user_messages, get_distinct_wished_user_receiver_user_combinations
 
 load_dotenv()
 
@@ -212,9 +212,16 @@ def handle_message(body, message, say):
                 from_users_unpacked = list(set(from_users_unpacked))
                 to_users = list(set(to_users))
 
+                # distinct in last 15 days
+                distinct_sender_receiver_mapping = get_distinct_wished_user_receiver_user_combinations(days=15)
+                print(f"Distinct sender receiver mapping: {distinct_sender_receiver_mapping}")
+                for mapping in distinct_sender_receiver_mapping:
+                    print(f'From: {mapping[0]}, To: {mapping[1]}')
+
+
                 for user_id in from_users_unpacked:
                     for target_user in to_users:
-                        if target_user != user_id:
+                        if target_user != user_id and (user_id, target_user) not in distinct_sender_receiver_mapping:
                             send_slack_message(user_id, 
                                                f"Hello <@{user_id}>! Give your wishes for <@{target_user}>'s work anniversary.  Please reply to this thread at the earliest"
                             )
@@ -222,7 +229,7 @@ def handle_message(body, message, say):
                 formatted_from_users = ', '.join([f'<@{user_id}>' for user_id in from_users_unpacked])
                 formatted_to_users = ', '.join([f'<@{user_id}>' for user_id in to_users])
 
-                response = f'Sent requests to get wishes from {formatted_from_users} for {formatted_to_users}. '
+                response = f'Sent requests to get wishes from {formatted_from_users} for {formatted_to_users}. Note: For users who have already wished, the message will not be sent again.'
             except Exception as e:
                 print(f"Error: {e}")
                 response = 'Error in collecting wishes'
