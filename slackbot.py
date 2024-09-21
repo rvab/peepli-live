@@ -8,7 +8,6 @@ import ast
 import os
 
 from slack_sdk.errors import SlackApiError
-# from bedrock_prompt import classify_user_message
 from openai_prompt import classify_user_message_openai
 from bedrock_rag import get_kb_response
 from constants import slack_bot_token, slack_app_token
@@ -161,7 +160,7 @@ def send_file_message(channel, response, event_ts, file_path, user_id):
         response = "Sorry, I couldn't find the sample file."
     else:
         try:
-            result = app.client.files_upload_v2(
+            app.client.files_upload_v2(
                 channels=channel,
                 file=file_path,
                 initial_comment=f":done: Generated card for user <@{user_id}>",
@@ -185,7 +184,7 @@ def handle_message(body, message, say):
     if event["channel_type"] == "im":
         text = event["text"]
 
-        # Find the action and other details from bedrock
+        # Find the action and other details from openai
         raw_response = classify_user_message_openai(prompt=text)
         classify_response = ast.literal_eval(raw_response)
 
@@ -204,44 +203,38 @@ def handle_message(body, message, say):
             parent_message = get_parent_message(channel_id, thread_ts)
 
             if parent_message:
-                # if classify_response['action'] == 'wish':
-                    print(f"Parent message text: {parent_message['text']}")
-                    from_user = event["user"]
-                    for_user = get_user_id_from_collect_wish_text(parent_message['text'])[0]
+                from_user = event["user"]
+                for_user = get_user_id_from_collect_wish_text(parent_message['text'])[0]
 
-                    # Store data in database
-                    from_user_details = get_slack_user_details(from_user)
-                    print(f'from_user asdfasdfadf - {from_user_details}')
-                    from_user_values = {
-                        "name": from_user_details['real_name'],
-                        "email": from_user_details['name'],
-                        "profile_pic": from_user_details['image_original'],
-                        "slack_user_id": from_user_details['id']
-                    }
-                    print(f'for_user asdfasdfadf - {get_slack_user_details(for_user)}')
-                    for_user_details = get_slack_user_details(for_user)
-                    for_user_values = {
-                        "name": for_user_details['real_name'],
-                        "email": for_user_details['name'],
-                        "profile_pic": for_user_details['image_original'],
-                        "slack_user_id": for_user_details['id']
-                    }
+                # Store data in database
+                from_user_details = get_slack_user_details(from_user)
+                from_user_values = {
+                    "name": from_user_details['real_name'],
+                    "email": from_user_details['name'],
+                    "profile_pic": from_user_details['image_original'],
+                    "slack_user_id": from_user_details['id']
+                }
+                print(f'for_user asdfasdfadf - {get_slack_user_details(for_user)}')
+                for_user_details = get_slack_user_details(for_user)
+                for_user_values = {
+                    "name": for_user_details['real_name'],
+                    "email": for_user_details['name'],
+                    "profile_pic": for_user_details['image_original'],
+                    "slack_user_id": for_user_details['id']
+                }
 
-                    # Add messages (users will be created automatically if they don't exist)
-                    add_message_to_db(
-                        from_user_values,
-                        for_user_values,
-                        text
-                    )
+                # Add messages (users will be created automatically if they don't exist)
+                add_message_to_db(
+                    from_user_values,
+                    for_user_values,
+                    text
+                )
 
-                    print(f"From user: {from_user}, For user: {for_user}")
-                    response = f"Recieved the following wish from you: {text}. \n If you want to update your wish, please reply with new message to this thread."
-                    # response = f"From user: <@{from_user}>, For user: <@{for_user}>, Wish: {text}"
-                # else:
-                #     response = "Please provide a appropriate wish."
+                print(f"From user: {from_user}, For user: {for_user}")
+                response = f"Recieved the following wish from you: {text}. \n If you want to update your wish, please reply with new message to this thread."
 
-                    send_slack_message(event["channel"], response, event["ts"])
-                    return
+                send_slack_message(event["channel"], response, event["ts"])
+                return
             else:
                 print("Couldn't retrieve parent message")
 
@@ -263,9 +256,6 @@ def handle_message(body, message, say):
 
                 # distinct in last 15 days
                 distinct_sender_receiver_mapping = get_distinct_wished_user_receiver_user_combinations(days=15)
-                print(f"Distinct sender receiver mapping: {distinct_sender_receiver_mapping}")
-                for mapping in distinct_sender_receiver_mapping:
-                    print(f'From: {mapping[0]}, To: {mapping[1]}')
 
                 wishes_sent_for = {}
                 print(f"From users: {from_users_unpacked}, To users: {to_users}")
@@ -282,21 +272,9 @@ def handle_message(body, message, say):
                             requested_wishes_from.append(receiver_user)
                     wishes_sent_for[target_user] = requested_wishes_from
 
-                # for user_id in from_users_unpacked:
-                #     requested_wishes_from = []
-                #     for target_user in to_users:
-                #         if target_user != user_id and (user_id, target_user) not in distinct_sender_receiver_mapping:
-                #             doj = get_doj_of_user(target_user)
-                #             upcoming_anniversary = get_upcoming_anniversary(datetime.strptime(doj, '%Y-%m-%d'))
-                #             send_slack_message(user_id, 
-                #                 f"Hello <@{user_id}>! Give your wishes for <@{target_user}>'s {upcoming_anniversary['years_completed']} work anniversary which is on {upcoming_anniversary['next_anniversary_date']}.  Please reply to this thread at the earliest"
-                #             )
-                #             requested_wishes_from.append(target_user)
-                #             wishes_sent_for[target_user] = user_id
-
                 print(f"Wishes sent for: {wishes_sent_for}")
                 for target_user, requested_wishes_from in wishes_sent_for.items():
-                    print(f"asdfasdfn Target user: {target_user}, requested_wishes_from: {requested_wishes_from}")
+                    print(f"Target user: {target_user}, requested_wishes_from: {requested_wishes_from}")
                     if len(requested_wishes_from) == 0:
                         print(f"No wishes to collect for {target_user}")
                         response = f'No wishes to collect for <@{target_user}>'

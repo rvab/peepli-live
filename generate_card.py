@@ -6,9 +6,7 @@ from sqlite_helper import get_detailed_wishes_for_user, get_user_details
 
 
 def generate_card_for_user(user_id, render_card_func):
-
   raw_wishes = get_detailed_wishes_for_user(user_id)
-  print(f'Raw wishes: {raw_wishes}')
   wishes = []
   for wish in raw_wishes:
     save_path = wish[2].split('/')[-1] # Handle cases with no profile pic
@@ -36,5 +34,3 @@ def generate_card_for_user(user_id, render_card_func):
 
   render_card_func(wishes, for_user_name, save_path, output_card)
   return output_card
-
-# generate_card_for_user('UL9N5PX8V')
