@@ -1,33 +1,33 @@
-import logging
-from slack_bolt import App
-from slack_bolt.adapter.socket_mode import SocketModeHandler
-from dotenv import load_dotenv
-import re
-import requests
 import ast
+import logging
 import os
-
-from slack_sdk.errors import SlackApiError
-from openai_prompt import classify_user_message_openai
-from bedrock_rag import get_kb_response
-from constants import slack_bot_token, slack_app_token
-from generate_card import generate_card_for_user
-from load_employee_data import load_employee_data
-import numpy as np
+import re
 from datetime import datetime
+import numpy as np
+import requests
 
+from bedrock_rag import get_kb_response
+from constants import slack_app_token, slack_bot_token
+from dotenv import load_dotenv
+from generate_card import generate_card_for_user
 from image_generator.script1 import render_card as render_card_1
 from image_generator.script2 import render_card as render_card_2
 from image_generator.script3 import render_card as render_card_3
-renders = [render_card_1, render_card_2, render_card_3]
-
-
-from sqlite_helper import add_message_to_db, get_user_messages, get_distinct_wished_user_receiver_user_combinations
+from load_employee_data import load_employee_data
+from openai_prompt import classify_user_message_openai
+from slack_bolt import App
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_sdk.errors import SlackApiError
+from sqlite_helper import (add_message_to_db,
+                           get_distinct_wished_user_receiver_user_combinations,
+                           get_user_messages)
 
 load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+renders = [render_card_1, render_card_2, render_card_3]
 
 
 app = App(token=slack_bot_token)
@@ -68,7 +68,6 @@ def get_group_members(group_id):
     else:
         raise Exception(f"Failed to get members: {data.get('error')}")
 
-
 def get_upcoming_anniversary(doj):
 
     today = datetime.today()
@@ -99,7 +98,6 @@ def get_doj_of_user(user_id):
         return date_str
 
     print(f"No matching record found for {user_email}")
-
 
 def get_parent_message(channel_id, thread_ts):
     try:
@@ -186,7 +184,16 @@ def handle_message(body, message, say):
 
         # Find the action and other details from openai
         raw_response = classify_user_message_openai(prompt=text)
-        classify_response = ast.literal_eval(raw_response)
+        try:
+            classify_response = ast.literal_eval(raw_response)
+        except:
+            classify_response = raw_response
+            send_slack_message(event["channel"], "Sorry, unable to respond to your message", event["ts"])
+
+        # Respond to greetings
+        if classify_response['action'] == 'greeting':
+            send_slack_message(event["channel"], classify_response["value"], event["ts"])
+            return
 
         # Help general query from KB
         if classify_response['action'] == 'general':
@@ -331,7 +338,6 @@ def handle_message(body, message, say):
             except:
                 response = 'Error in generating card'
                 send_slack_message(event["channel"], response, event["ts"])
-
 
 def main():
     handler = SocketModeHandler(app, slack_app_token)

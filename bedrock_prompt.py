@@ -1,6 +1,7 @@
 import boto3
-from constants import region, model_id
 import json
+
+from constants import model_id, region
 
 bedrock_prompt_client = boto3.client(service_name='bedrock-runtime', region_name=region)
 

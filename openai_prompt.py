@@ -122,6 +122,9 @@ def classify_user_message_openai(prompt):
             "What is the POSH policy at Fyle?"
             Expected Output:
             {"action": "general"}
+        
+        6. Responding to Greetings:
+            1. If the user greets the AI assistant, respond in json format with action as greeting and value as the greeting message.
     """
 
     response = openai.chat.completions.create(

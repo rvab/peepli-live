@@ -1,7 +1,5 @@
 from datetime import date
-
 from image_generator.helpers import download_image
-
 from sqlite_helper import get_detailed_wishes_for_user, get_user_details
 
 
